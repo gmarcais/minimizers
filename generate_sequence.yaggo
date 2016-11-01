@@ -1,0 +1,5 @@
+description "Output random sequence"
+
+arg("n") {
+  description "Sequence length"
+  uint64; suffix }
