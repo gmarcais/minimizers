@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
   const std::string sequence = read_fasta(args.fasta_arg);
   const size_t      k        = args.k_arg;
   mer_pos::window            = args.w_arg;
+  const size_t      w        = mer_pos::window;
 
   const uint64_t  mask    = (~(uint64_t)0) >> (8 * sizeof(uint64_t) - 2 * k);
   const uint64_t  nb_mers = mask + 1;
@@ -28,17 +29,40 @@ int main(int argc, char *argv[]) {
 
   // Create counters for each class
   std::vector<size_t> counters;
-  if(args.conjugacy_flag) {
-    counters.resize(k, (size_t)0);
-    for(uint64_t m = 0; m < nb_mers; ++m) {
-      const auto o = compute_order(m, k);
-      order[m] = k - o;
-      ++counters[k - o];
+  counters.resize(1);
+  counters[0] = nb_mers;
+
+  // Add non-universal mers as the highest elements in the ordering
+  if(args.universal_given) {
+    const int nonu_counter = args.conjugacy_flag ? k : 1;
+    counters.resize(nonu_counter + 1, (size_t)0);
+    std::fill(order.begin(), order.end(), nonu_counter);
+    counters[0]		   = 0;
+    counters[nonu_counter] = nb_mers;
+      
+    std::ifstream is(args.universal_arg);
+    std::string line;
+    while(std::getline(is, line)) {
+      uint64_t m = string_to_mer(line, k);
+      order[m] = 0;
+      ++counters[0];
+      --counters[nonu_counter];
     }
-  } else {
-    counters.resize(1);
-    counters[0] = nb_mers;
-    //    std::fill(order.begin(), order.end(), 0);
+  }
+
+  // Create conjugacy classes for elements that are not yet classified
+  // (i.e. order[m] == 0).
+  if(args.conjugacy_flag) {
+    if(counters.size() < k)
+      counters.resize(k, (size_t)0);
+    for(uint64_t m = 0; m < nb_mers; ++m) {
+      if(order[m] == 0) {
+	const auto o = compute_order(m, k);
+	order[m] = k - o;
+	--counters[0];
+	++counters[k - o];
+      }
+    }
   }
 
   // Compute partial sums
@@ -86,7 +110,7 @@ int main(int argc, char *argv[]) {
       os << mer_to_string(m, k) << '\n';
   }
 
-  double expected = ((double)(nb_mers - 1) / (double)(nb_mers + mer_pos::window)) * (2.0 / (mer_pos::window + 1));
+  double expected = ((double)(nb_mers - 1) / (double)(nb_mers + w)) * (2.0 / (w + 1));
   double actual = (double)ms.nb() / (double)(sequence.size() - k + 1);
   std::cout << "minimizers: " << minimizers.size() << '\n'
             << "mean: " << ms.mean() << '\n'

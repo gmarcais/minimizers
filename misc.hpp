@@ -52,7 +52,7 @@ inline int base_to_code(char c) {
 
 extern const char* conv; // == "ACGT"
 std::string mer_to_string(uint64_t x, size_t k);
-
+uint64_t string_to_mer(const std::string& line, size_t k);
 
 struct slide_mer {
   const uint64_t mask;

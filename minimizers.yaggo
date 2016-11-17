@@ -9,6 +9,9 @@ option("c", "conjugacy") {
 option("r", "randomize") {
   description "Randomize order within class"
   off }
+option("u", "universal") {
+  description "Universal hitting set file"
+  c_string; typestr "PATH" }
 option("d", "debug") {
   description "Display debugging info"
   off }

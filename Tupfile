@@ -2,14 +2,18 @@ include_rules
 
 CXXFLAGS = -Wall -Werror -std=c++11
 
-: foreach minimizers.yaggo uhmers.yaggo generate_sequence.yaggo |> !yaggo |> {cmdlines}
-: foreach minimizers.cc mers_in_set.cc uhmers.cc misc.cc compute_minimizers.cc | {cmdlines} |> !cxx |>
-: foreach conjugacy_minimizers.cc random_order.cc uhmers2.cc generate_sequence.cc | {cmdlines} |> !cxx |>
+: foreach minimizers.yaggo generate_sequence.yaggo |> !yaggo |> {cmdlines}
+: foreach minimizers.cc compute_minimizers.cc generate_sequence.cc misc.cc | {cmdlines} |> !cxx |>
 
 : misc.o minimizers.o compute_minimizers.o |> !lxxd |> minimizers
-: misc.o mers_in_set.o |> !lxxd |> mers_in_set
-: misc.o uhmers.o |> !lxxd |> uhmers
-: misc.o compute_minimizers.o conjugacy_minimizers.o |> !lxxd |> conjugacy_minizers
-: misc.o compute_minimizers.o random_order.o |> !lxxd |> random_order
-: misc.o compute_minimizers.o uhmers2.o |> !lxxd |> uhmers2
 : misc.o generate_sequence.o |> !lxxd |> generate_sequence
+
+#: foreach mers_in_set.cc uhmers.cc compute_minimizers.cc | {cmdlines} |> !cxx |>
+#: foreach conjugacy_minimizers.cc random_order.cc uhmers2.cc generate_sequence.cc | {cmdlines} |> !cxx |>
+
+# : misc.o mers_in_set.o |> !lxxd |> mers_in_set
+# : misc.o uhmers.o |> !lxxd |> uhmers
+# : misc.o compute_minimizers.o conjugacy_minimizers.o |> !lxxd |> conjugacy_minizers
+# : misc.o compute_minimizers.o random_order.o |> !lxxd |> random_order
+# : misc.o compute_minimizers.o uhmers2.o |> !lxxd |> uhmers2
+
