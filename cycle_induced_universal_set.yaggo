@@ -1,0 +1,8 @@
+purpose "Compute a universal set from conjugacy classes"
+
+arg("k") {
+  description "Length of k-mer"
+  uint32 }
+arg("w") {
+  description "Length of window"
+  uint32 }
