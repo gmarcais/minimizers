@@ -1,0 +1,16 @@
+purpose "Count number of w+1 windows with only 1 element from universal hitting set"
+
+option("u", "universal") {
+  description "Universal hitting set file"
+  required
+  c_string; typestr "PATH" }
+
+arg("k") {
+  description "Mer length"
+  uint32 }
+arg("w") {
+  description "Length of window"
+  uint32 }
+arg("fasta") {
+  description "Input sequence"
+  c_string; typestr "PATH" }

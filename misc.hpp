@@ -78,6 +78,10 @@ struct slide_mer {
   bool full() const { return len == k; }
 };
 
+extern const char* bconf; // == "01"
+std::string bmer_to_string(uint64_t x, size_t k);
+uint64_t string_to_bmer(const std::string& line, size_t k);
+
 // Read mers from a file and add to a set
 std::unordered_set<uint64_t> read_mers(const char* path, const size_t k);
 

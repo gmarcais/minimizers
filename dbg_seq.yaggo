@@ -1,0 +1,8 @@
+purpose "Generate a de Bruijn sequence"
+
+option("w", "wrap") {
+  description "Wrap around to get full sequence"
+  off }
+arg("order") {
+  description "Order of sequence to generate"
+  int }

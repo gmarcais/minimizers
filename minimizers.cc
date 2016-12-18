@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     std::fill(order.begin(), order.end(), nonu_counter);
     counters[0]		   = 0;
     counters[nonu_counter] = nb_mers;
-      
+
     std::ifstream is(args.universal_arg);
     std::string line;
     while(std::getline(is, line)) {
