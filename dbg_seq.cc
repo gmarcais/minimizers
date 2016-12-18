@@ -12,9 +12,40 @@ const int params[][2] = {
   {3, 0}, {2, 0},  {3, 15}, {3, 0}, {1, 27},
 };
 
+struct binary_out {
+  int        m_wi;
+  const int  m_n;
+  const bool m_do_wrap;
+  int*       m_wrap;
+
+
+  binary_out(int n, bool do_wrap) : m_wi(0), m_n(n), m_do_wrap(do_wrap)
+  {
+    m_wrap = new int[n-1];
+  }
+  ~binary_out() {
+    if(m_do_wrap) {
+      for(int i = 0; i < m_n - 1; ++i)
+        std::cout << m_wrap[i];
+    }
+    delete [] m_wrap;
+  }
+
+  void operator()(int b) {
+    std::cout << b;
+
+    if(m_wi < m_n - 1) {
+      m_wrap[m_wi] = b;
+      ++m_wi;
+    }
+  }
+};
+
+template<typename Output>
 void seq_1(int n, int s, bool do_wrap) {
+  Output out(n, do_wrap);
+
   int x[n];
-  int wrap[n-1];
   int k = 0;
   int j = s;
   int r = 0;
@@ -23,20 +54,14 @@ void seq_1(int n, int s, bool do_wrap) {
   for(int i = 1; i < n; ++i)
     x[i] = 0;
 
-  size_t wi = 0;
   while(true) {
-    std::cout << x[k];
-    if(wi < n - 1) {
-      wrap[wi] = x[k];
-      ++wi;
-    }
-
+    out(x[k]);
     if(x[k])
       r = 0;
     else {
       ++r;
       if(r == n - 1) {
-        std::cout << "0";
+        out(0);
         break;
       }
     }
@@ -44,17 +69,13 @@ void seq_1(int n, int s, bool do_wrap) {
     j = ((j == 0) ? n : j) - 1;
     x[k] ^= x[j];
   }
-
-  if(do_wrap) {
-    for(int i = 0; i < n - 1; ++i)
-      std::cout << wrap[i];
-  }
-  std::cout << '\n';
 }
 
+template<typename Output>
 void seq_2(int n, int s, int t, bool do_wrap) {
+  Output out(n, do_wrap);
+
   int x[n];
-  int wrap[n-1];
   int k = 0;
   int j = s;
   int r = 0;
@@ -65,13 +86,8 @@ void seq_2(int n, int s, int t, bool do_wrap) {
   for(int l = 1; l < n; ++l)
     x[l] = 0;
 
-  size_t wi = 0;
   while(true) {
-    std::cout << x[k];
-    if(wi < n - 1) {
-      wrap[wi] = x[k];
-      ++wi;
-    }
+    out(x[k]);
 
     if(x[k])
       r = 0;
@@ -90,15 +106,10 @@ void seq_2(int n, int s, int t, bool do_wrap) {
 
     x[k] ^= x[j] ^ x[i] ^ x[h];
   }
-  if(do_wrap) {
-    for(int i = 0; i < n - 1; ++i)
-      std::cout << wrap[i];
-  }
-  std::cout << '\n';
-
 }
 
 int main(int argc, char *argv[]) {
+  std::ios::sync_with_stdio(false);
   dbg_seq args(argc, argv);
 
   if(args.order_arg >= sizeof(params) / sizeof(int[2]) || args.order_arg < 1) {
@@ -106,19 +117,19 @@ int main(int argc, char *argv[]) {
   }
 
   if(args.order_arg == 1) {
-    std::cout << "01\n";
+    binary_out out(1, args.wrap_flag);
+    out(0), out(1);
   } else if(args.order_arg == 2) {
-    std::cout << "0011";
-    if(args.wrap_flag)
-      std::cout << '0';
-    std::cout << '\n';
+    binary_out out(2, args.wrap_flag);
+    out(0), out(0), out(1), out(1);
   } else {
     if(params[args.order_arg][1] == 0) {
-      seq_1(args.order_arg, params[args.order_arg][0], args.wrap_flag);
+      seq_1<binary_out>(args.order_arg, params[args.order_arg][0], args.wrap_flag);
     } else {
-      seq_2(args.order_arg, params[args.order_arg][0], params[args.order_arg][1], args.wrap_flag);
+      seq_2<binary_out>(args.order_arg, params[args.order_arg][0], params[args.order_arg][1], args.wrap_flag);
     }
   }
+  std::cout << '\n';
 
   return 0;
 }
