@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
   std::ios::sync_with_stdio(false);
   dbg_seq args(argc, argv);
 
-  if(args.order_arg >= sizeof(params) / sizeof(int[2]) || args.order_arg < 0) {
+  if(args.order_arg >= (int)(sizeof(params) / sizeof(int[2])) || args.order_arg < 0) {
     dbg_seq::error() << "order must be in [0, " << (sizeof(params) / sizeof(int[2])) << "]";
   }
 
