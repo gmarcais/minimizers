@@ -1,0 +1,8 @@
+purpose "Compute longest path in de Bruijn graph minus vertex set"
+
+arg("k") {
+  description "Length of k-mers"
+  uint32 }
+arg("vertices") {
+  description "k-mers to remove"
+  c_string; typestr "PATH" }
