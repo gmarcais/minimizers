@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <iostream>
 #include "dbg_seq.hpp"
 
@@ -19,7 +20,8 @@ struct binary_out {
   int*       m_wrap;
 
 
-  binary_out(int n, bool do_wrap) : m_wi(0), m_n(n), m_do_wrap(do_wrap)
+  binary_out(int n, bool do_wrap)
+    : m_wi(0), m_n(n), m_do_wrap(do_wrap)
   {
     m_wrap = new int[n-1];
   }
@@ -40,6 +42,49 @@ struct binary_out {
     }
   }
 };
+
+struct dna_out {
+  static const char* bases;
+  int        m_wi;
+  const int  m_n;
+  const bool m_do_wrap;
+  int*       m_wrap;
+  int        m_buffer;
+  int        m_first;
+
+  dna_out(int n, bool do_wrap)
+    : m_wi(0), m_n(n), m_do_wrap(do_wrap)
+  {
+    m_wrap = new int[n - 1];
+  }
+
+  ~dna_out() {
+    const int v = (m_buffer << 1) | m_first;
+    std::cout << bases[v];
+
+    if(m_do_wrap) {
+      for(int i = 0; i < m_n - 1; ++i)
+        std::cout << bases[m_wrap[i]];
+    }
+    delete [] m_wrap;
+  }
+
+  void operator()(int b) {
+    std::cout << m_wi << ' ' << b << ' ' << m_buffer << ' ' << m_first << '\n';
+    if(m_wi > 0) {
+      const int v = (m_buffer << 1) | b;
+      std::cout << bases[v];
+    } else {
+     m_first  = b;
+    }
+    if(m_wi < m_n - 1) {
+      m_wrap[m_wi] = b;
+      ++m_wi;
+    }
+    m_buffer = b;
+  }
+};
+const char* dna_out::bases = "ACGT";
 
 template<typename Output>
 void seq_1(int n, int s, bool do_wrap) {
@@ -108,28 +153,39 @@ void seq_2(int n, int s, int t, bool do_wrap) {
   }
 }
 
+template<typename Output>
+void seq(int n, bool do_wrap) {
+  if(n == 0) {
+    // NOOP
+  } else if(n == 1) {
+    Output out(1, do_wrap);
+    out(0), out(1);
+  } else if(n == 2) {
+    Output out(2, do_wrap);
+    out(0), out(0), out(1), out(1);
+  } else if(params[n][1] == 0) {
+    seq_1<Output>(n, params[n][0], do_wrap);
+  } else {
+    seq_2<Output>(n, params[n][0], params[n][1], do_wrap);
+  }
+}
+
 int main(int argc, char *argv[]) {
   std::ios::sync_with_stdio(false);
   dbg_seq args(argc, argv);
 
-  if(args.order_arg >= sizeof(params) / sizeof(int[2]) || args.order_arg < 1) {
-    dbg_seq::error() << "order must be in [1, " << (sizeof(params) / sizeof(int[2])) << "]";
+  if(args.order_arg >= sizeof(params) / sizeof(int[2]) || args.order_arg < 0) {
+    dbg_seq::error() << "order must be in [0, " << (sizeof(params) / sizeof(int[2])) << "]";
   }
 
-  if(args.order_arg == 1) {
-    binary_out out(1, args.wrap_flag);
-    out(0), out(1);
-  } else if(args.order_arg == 2) {
-    binary_out out(2, args.wrap_flag);
-    out(0), out(0), out(1), out(1);
+  if(args.dna_flag) {
+    seq<dna_out>(2 * args.order_arg, args.wrap_flag);
   } else {
-    if(params[args.order_arg][1] == 0) {
-      seq_1<binary_out>(args.order_arg, params[args.order_arg][0], args.wrap_flag);
-    } else {
-      seq_2<binary_out>(args.order_arg, params[args.order_arg][0], params[args.order_arg][1], args.wrap_flag);
-    }
+    seq<binary_out>(args.order_arg, args.wrap_flag);
   }
-  std::cout << '\n';
+
+  if(isatty(1))
+    std::cout << '\n';
 
   return 0;
 }
