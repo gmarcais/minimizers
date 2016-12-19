@@ -1,0 +1,15 @@
+description "Generate parameters for probabilistic universal hitting set"
+
+option("s", "size") {
+  description "Size of random sequence at each iteration"
+  uint64; suffix; default "1M" }
+option("n", "nb-iterations") {
+  description "Number of iterations"
+  uint32; default 10 }
+
+arg("k") {
+  description "Mer length"
+  uint32 }
+arg("w") {
+  description "Length of window"
+  uint32 }
