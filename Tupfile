@@ -3,11 +3,11 @@ include_rules
 CXXFLAGS = -Wall -Werror -std=c++1y
 
 CMDS  = minimizers.yaggo generate_sequence.yaggo cycle_induced_universal_set.yaggo
-CMDS += dna_longest_path.yaggo binary_longest_path.yaggo minimizers_large.yaggo
+CMDS += longest_path.yaggo minimizers_large.yaggo
 CMDS += w_sparse.yaggo dbg_seq.yaggo dbg_gen.yaggo
 
 SRCS  = minimizers.cc compute_minimizers.cc generate_sequence.cc misc.cc
-SRCS += w_sparse.cc
+SRCS += w_sparse.cc longest_path.cc
 #SRCS += cycle_induced_universal_set.cc dna_longest_path.cc binary_longest_path.cc
 # SRCS += minimizers_large.cc marsaglia_binary_matrices.cc w_sparse.cc dbg_seq.cc
 # SRCS += dbg_gen.cc
@@ -18,8 +18,7 @@ SRCS += w_sparse.cc
 : misc.o minimizers.o compute_minimizers.o         |> !lxxd |> minimizers
 : misc.o generate_sequence.o                       |> !lxxd |> generate_sequence
 #: misc.o cycle_induced_universal_set.o             |> !lxxd |> cycle_induced_universal_set
-#: misc.o dna_longest_path.o                        |> !lxxd |> dna_longest_path
-#: misc.o binary_longest_path.o                     |> !lxxd |> binary_longest_path
+: misc.o longest_path.o                            |> !lxxd |> longest_path
 #: misc.o compute_minimizers.o marsaglia_binary_matrices.o minimizers_large.o   |> !lxxd |> minimizers_large
 : misc.o w_sparse.o                                |> !lxxd |> w_sparse
 #: dbg_seq.o                                        |> !lxxd |> dbg_seq

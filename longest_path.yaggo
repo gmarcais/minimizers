@@ -1,5 +1,12 @@
 purpose "Compute longest path in de Bruijn graph minus vertex set"
 
+option("a", "alphabet") {
+  description "Alphabet"
+  c_string; default "acgt" }
+option("s", "size") {
+  description "Alphabet [1, s-1]"
+  int; conflict "alphabet" }
+
 arg("k") {
   description "Length of k-mers"
   uint32 }
