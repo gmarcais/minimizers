@@ -60,13 +60,26 @@ inline int base_to_code(char c) {
 }
 
 extern const char* conv; // == "ACGT"
-template<int BITS>
-std::string mer_to_string(uint64_t x, size_t k) {
-  std::string res;
-  for(int i = k - 1; i >= 0; i--)
-    res += conv[(x >> (i * BITS)) & Mask<BITS>::base];
-  return res;
 
+template<int BITS>
+struct mer_to_string {
+  uint64_t x;
+  uint64_t k;
+  mer_to_string(uint64_t x_, uint64_t k_) : x(x_), k(k_) { }
+
+  operator std::string() const {
+    std::string res;
+    for(int i = k - 1; i >= 0; i--)
+      res += conv[(x >> (i * BITS)) & Mask<BITS>::base];
+    return res;
+  }
+};
+
+template<int BITS>
+std::ostream& operator<<(std::ostream& os, const mer_to_string<BITS>& m) {
+  for(int i = m.k - 1; i >= 0; i--)
+    os<< conv[(m.x >> (i * BITS)) & Mask<BITS>::base];
+  return os;
 }
 
 template<int BITS>
