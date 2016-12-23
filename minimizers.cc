@@ -122,8 +122,17 @@ int order_minimizer(const minimizers& args) {
 int main(int argc, char *argv[]) {
   const minimizers args(argc, argv);
 
-  if(args.binary_flag)
+  const int alphabet_size =
+    args.size_given ? initialize_codes(args.size_arg) : initialize_codes(args.alphabet_arg);
+
+  if(alphabet_size == 2)
     return order_minimizer<1>(args);
-  else
+  else if(alphabet_size == 4)
     return order_minimizer<2>(args);
+  else {
+    std::cerr << "Alphabet size not supported" << std::endl;
+    return 1;
+  }
+
+  return 0;
 }

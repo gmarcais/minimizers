@@ -3,6 +3,8 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <sstream>
+#include <cctype>
 
 
 std::string read_fasta(const char* path) {
@@ -29,6 +31,26 @@ std::string read_fasta(const char* path) {
 }
 
 const char* conv = "012345678";
+
+int ascii_to_code[256];
+int initialize_codes(const char* s) {
+  std::fill(ascii_to_code, ascii_to_code + 256, -1);
+  int i = 0;
+  for( ; *s; ++i, ++s) {
+    if(ascii_to_code[std::tolower(*s)] != -1)
+      throw std::invalid_argument("Duplicated letter in alphabet");
+    ascii_to_code[std::tolower(*s)] = i;
+    ascii_to_code[std::toupper(*s)] = i;
+  }
+  return i;
+}
+
+int initialize_codes(int s) {
+  std::ostringstream os;
+  for(int i = 0; i < s; ++i)
+    os << i;
+  return initialize_codes(os.str().c_str());
+}
 
 const char* bconv = "01";
 std::string bmer_to_string(uint64_t x, size_t k) {

@@ -12,18 +12,23 @@ option("r", "randomize") {
 option("u", "universal") {
   description "Universal hitting set file"
   c_string; typestr "PATH" }
+option("a", "alphabet") {
+  description "Alphabet"
+  c_string; default "acgt" }
+option("s", "size") {
+  description "Alphabet [1, s-1]"
+  int; conflict "alphabet" }
 option("d", "debug") {
   description "Display debugging info"
   off }
-option("b", "binary") {
-  description "Use binary alphabet"
-  off }
+
 arg("k") {
   description "Mer length"
   uint32 }
 arg("w") {
   description "Length of window"
   uint32 }
+
 arg("fasta") {
   description "Input sequence"
   c_string; typestr "PATH" }

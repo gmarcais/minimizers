@@ -5,33 +5,33 @@
 #include "minimizers.hpp"
 #include "misc.hpp"
 
-
+template<int BITS>
 std::vector<bool> read_uhmers(const char* path, size_t k, size_t nb_mers) {
   std::vector<bool> uhmers(nb_mers, false);
   std::ifstream is(path);
   std::string line;
   while(std::getline(is, line)) {
-    uint64_t m = string_to_mer(line, k);
+    uint64_t m = string_to_mer<BITS>(line, k);
     uhmers[m] = true;
   }
   return uhmers;
 }
 
-int main(int argc, char *argv[]) {
-  w_sparse args(argc, argv);
+template<int BITS>
+int compute_sparsiness(const w_sparse& args) {
   const size_t      k        = args.k_arg;
   const size_t      w        = args.w_arg;
 
   const uint64_t  mask    = (~(uint64_t)0) >> (8 * sizeof(uint64_t) - 2 * k);
   const uint64_t  nb_mers = mask + 1;
 
-  std::vector<bool> uhmers = read_uhmers(args.universal_arg, k, nb_mers);
+  std::vector<bool> uhmers = read_uhmers<BITS>(args.universal_arg, k, nb_mers);
   const std::string sequence = read_fasta(args.fasta_arg);
 
   std::vector<bool> window_p(w+1, false);
   auto              it  = sequence.cbegin();
   const auto        end = sequence.cend();
-  slide_mer         mer(k);
+  slide_mer<BITS>   mer(k);
 
   // Prime k-1 bases of mer
   for(size_t i = 0; i < k-1 && it != end; ++i, ++it)
@@ -67,4 +67,21 @@ int main(int argc, char *argv[]) {
             << '\n';
 
   return 0;
+}
+
+int main(int argc, char *argv[]) {
+  w_sparse args(argc, argv);
+
+  const int alphabet_size =
+    args.size_given ? initialize_codes(args.size_arg) : initialize_codes(args.alphabet_arg);
+
+  if(alphabet_size == 2)
+    return compute_sparsiness<1>(args);
+  else if(alphabet_size == 4)
+    return compute_sparsiness<2>(args);
+  else {
+    std::cerr << "Alphabet size not supported" << std::endl;
+    return 1;
+  }
+
 }

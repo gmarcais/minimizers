@@ -5,6 +5,13 @@ option("u", "universal") {
   required
   c_string; typestr "PATH" }
 
+option("a", "alphabet") {
+  description "Alphabet"
+  c_string; default "acgt" }
+option("s", "size") {
+  description "Alphabet [1, s-1]"
+  int; conflict "alphabet" }
+
 arg("k") {
   description "Mer length"
   uint32 }

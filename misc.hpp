@@ -49,18 +49,14 @@ struct Mask {
 
 std::string read_fasta(const char* path);
 
+extern int ascii_to_code[256];
+
+// Initialize ascii_to_code and return the size of the alphabet
+int initialize_codes(const char* s);
+int initialize_codes(int s);
+
 inline int base_to_code(char c) {
-  switch(c) {
-  case 'A': case 'a': case '0': return 0;
-  case 'C': case 'c': case '1': return 1;
-  case 'G': case 'g': case '2': return 2;
-  case 'T': case 't': case '3': return 3;
-  case '4': return 4;
-  case '6': return 5;
-  case '7': return 6;
-  case '8': return 7;
-  default: return -1;
-  }
+  return ascii_to_code[(unsigned char)c];
 }
 
 extern const char* conv; // == "ACGT"
