@@ -15,6 +15,9 @@ option("u", "universal") {
 option("d", "debug") {
   description "Display debugging info"
   off }
+option("b", "binary") {
+  description "Use binary alphabet"
+  off }
 arg("k") {
   description "Mer length"
   uint32 }

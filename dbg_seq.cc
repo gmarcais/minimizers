@@ -178,11 +178,7 @@ int main(int argc, char *argv[]) {
     dbg_seq::error() << "order must be in [0, " << (sizeof(params) / sizeof(int[2])) << "]";
   }
 
-  if(args.dna_flag) {
-    seq<dna_out>(2 * args.order_arg, args.wrap_flag);
-  } else {
-    seq<binary_out>(args.order_arg, args.wrap_flag);
-  }
+  seq<binary_out>(args.order_arg, args.wrap_flag);
 
   if(isatty(1))
     std::cout << '\n';

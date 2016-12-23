@@ -1,8 +1,5 @@
-purpose "Generate a de Bruijn sequence"
+purpose "Generate a binary de Bruijn sequence"
 
-option("dna") {
-  description "Output DNA sequences"
-  off }
 option("w", "wrap") {
   description "Wrap around to get full sequence"
   off }

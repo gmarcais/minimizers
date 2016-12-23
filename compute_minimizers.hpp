@@ -22,7 +22,7 @@ bool greater(const mer_pos& x, const mer_pos& y) {
   return x.pos + mer_pos::window < y.pos || MerComp()(x.mer, y.mer);
 }
 
-template<typename MerComp>
+template<typename MerComp, int BITS>
 struct compute_minimizers {
   template<typename String, typename Container>
   inline mean_stdev operator()(const String& seq, const size_t k,
@@ -36,7 +36,7 @@ struct compute_minimizers {
                         Action act) {
     std::vector<mer_pos> heap;
     mean_stdev           ms;
-    slide_mer            mer(k);
+    slide_mer<BITS>      mer(k);
     size_t               pos     = 0;
     size_t               min_pos = 0; // Position of last minizer
     const size_t         base_w  = k + mer_pos::window - 1;

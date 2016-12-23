@@ -10,15 +10,14 @@ struct order_greater {
   bool operator()(uint64_t x, uint64_t y) const { return order[y] < order[x]; }
 };
 
-int main(int argc, char *argv[]) {
-  const minimizers args(argc, argv);
-
+template<int BITS>
+int order_minimizer(const minimizers& args) {
   const std::string sequence = read_fasta(args.fasta_arg);
   const size_t      k        = args.k_arg;
   mer_pos::window            = args.w_arg;
   const size_t      w        = mer_pos::window;
 
-  const uint64_t  mask    = (~(uint64_t)0) >> (8 * sizeof(uint64_t) - 2 * k);
+  const uint64_t  mask    = Mask<BITS>::bases(k);
   const uint64_t  nb_mers = mask + 1;
   std::mt19937_64 prg;
   seed_prg(prg);
@@ -43,7 +42,7 @@ int main(int argc, char *argv[]) {
     std::ifstream is(args.universal_arg);
     std::string line;
     while(std::getline(is, line)) {
-      uint64_t m = string_to_mer(line, k);
+      uint64_t m = string_to_mer<BITS>(line, k);
       order[m] = 0;
       ++counters[0];
       --counters[nonu_counter];
@@ -57,7 +56,7 @@ int main(int argc, char *argv[]) {
       counters.resize(k, (size_t)0);
     for(uint64_t m = 0; m < nb_mers; ++m) {
       if(order[m] == 0) {
-	const auto o = compute_order(m, k);
+	const auto o = compute_order<BITS>(m, k);
 	order[m] = k - o;
 	--counters[0];
 	++counters[k - o];
@@ -80,7 +79,7 @@ int main(int argc, char *argv[]) {
     std::cerr << ' ' << sum << '\n';
     std::cerr << "counters:\n";
     for(uint64_t m = 0; m < nb_mers; ++m)
-      std::cerr << mer_to_string(m, k) << ':' << order[m] << '\n';
+      std::cerr << mer_to_string<BITS>(m, k) << ':' << order[m] << '\n';
   }
 
   // Assign final order
@@ -99,15 +98,15 @@ int main(int argc, char *argv[]) {
   if(args.debug_flag) {
     std::cerr << "Order:\n";
     for(uint64_t m = 0; m < nb_mers; ++m)
-      std::cerr << mer_to_string(m, k) << ':' << order[m] << '\n';
+      std::cerr << mer_to_string<BITS>(m, k) << ':' << order[m] << '\n';
   }
 
-  auto ms = compute_minimizers<order_greater>()(sequence, k, minimizers);
+  auto ms = compute_minimizers<order_greater, BITS>()(sequence, k, minimizers);
 
   if(args.minimizers_given) {
     std::ofstream os(args.minimizers_arg);
     for(const auto m : minimizers)
-      os << mer_to_string(m, k) << '\n';
+      os << mer_to_string<BITS>(m, k) << '\n';
   }
 
   double expected = ((double)(nb_mers - 1) / (double)(nb_mers + w)) * (2.0 / (w + 1));
@@ -118,4 +117,13 @@ int main(int argc, char *argv[]) {
             << "density: " << actual << (actual < expected ? " < " : " > ")  << expected << '\n';
 
   return 0;
+}
+
+int main(int argc, char *argv[]) {
+  const minimizers args(argc, argv);
+
+  if(args.binary_flag)
+    return order_minimizer<1>(args);
+  else
+    return order_minimizer<2>(args);
 }

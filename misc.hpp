@@ -7,6 +7,8 @@
 #include <random>
 #include <algorithm>
 #include <functional>
+#include <fstream>
+#include <iostream>
 
 class mean_stdev {
   double        A = 0, Q = 0;
@@ -38,22 +40,54 @@ inline mean_stdev& operator<<(mean_stdev& ms, const double v) {
   return ms;
 }
 
+// Mask
+template<int BITS>
+struct Mask {
+  static const uint64_t base = (~(uint64_t)0) >> (sizeof(uint64_t) * 8 - BITS);
+  static constexpr uint64_t bases(size_t s) { return (~(uint64_t)0) >> (sizeof(uint64_t) * 8 - BITS * s); }
+};
+
 std::string read_fasta(const char* path);
 
 inline int base_to_code(char c) {
   switch(c) {
-  case 'A': case 'a': return 0;
-  case 'C': case 'c': return 1;
-  case 'G': case 'g': return 2;
-  case 'T': case 't': return 3;
+  case 'A': case 'a': case '0': return 0;
+  case 'C': case 'c': case '1': return 1;
+  case 'G': case 'g': case '2': return 2;
+  case 'T': case 't': case '3': return 3;
+  case '4': return 4;
+  case '6': return 5;
+  case '7': return 6;
+  case '8': return 7;
   default: return -1;
   }
 }
 
 extern const char* conv; // == "ACGT"
-std::string mer_to_string(uint64_t x, size_t k);
-uint64_t string_to_mer(const std::string& line, size_t k);
+template<int BITS>
+std::string mer_to_string(uint64_t x, size_t k) {
+  std::string res;
+  for(int i = k - 1; i >= 0; i--)
+    res += conv[(x >> (i * BITS)) & Mask<BITS>::base];
+  return res;
 
+}
+
+template<int BITS>
+uint64_t string_to_mer(const std::string& line, size_t k) {
+  uint64_t m = 0;
+  for(size_t i = 0; i < k; ++i) {
+    int code = base_to_code(line[i]);
+    if(code < 0) {
+      std::cerr << "Invalid characters in mer " << line << '\n';
+      exit(1);
+    }
+    m = (m << BITS) | (code & Mask<BITS>::base);
+  }
+  return m;
+}
+
+template<int BITS>
 struct slide_mer {
   const uint64_t mask;
   const size_t   k;
@@ -61,14 +95,14 @@ struct slide_mer {
   uint64_t       mer = 0;
 
   slide_mer(size_t k_)
-    : mask(~(uint64_t)0 >> (sizeof(uint64_t) * 8 - 2 * k_))
+    : mask(Mask<BITS>::bases(k_))
     , k(k_)
   { }
 
   void append(const char c) {
     int code = base_to_code(c);
     if(code >= 0) {
-      mer = ((mer << 2) | code) & mask;
+      mer = ((mer << BITS) | code) & mask;
       len = std::min(len + 1, k);
     } else {
       len = 0;
@@ -83,9 +117,47 @@ std::string bmer_to_string(uint64_t x, size_t k);
 uint64_t string_to_bmer(const std::string& line, size_t k);
 
 // Read mers from a file and add to a set
-std::unordered_set<uint64_t> read_mers(const char* path, const size_t k);
+template<int BITS>
+std::unordered_set<uint64_t> read_mers(const char* path, const size_t k) {
+  std::unordered_set<uint64_t> res;
+  std::string                  line;
+  std::ifstream                is(path);
+  size_t                       nb_mers = 0;
 
-int compute_order(uint64_t mer, size_t k);
+  while(std::getline(is, line)) {
+    if(line.size() != k) {
+      std::cerr << "All mers must have length " << k << ", got '" << line << "'\n";
+      exit(1);
+    }
+    uint64_t m = string_to_mer<BITS>(line, k);
+    auto tmp = res.insert(m);
+    if(!tmp.second) {
+      std::cerr << "Duplicated mer in set " << mer_to_string<BITS>(m, k) << ':' << line << '\n';
+      exit(1);
+    }
+    ++nb_mers;
+  }
+
+  if(nb_mers != res.size()) {
+    std::cerr << "Error, size of set != nb mers inserted\n";
+    exit(1);
+  }
+
+  return res;
+}
+
+template<int BITS>
+int compute_order(uint64_t mer, size_t k) {
+  const int off  = BITS * (k - 1);
+  uint64_t  rmer = mer;
+  int       o    = 0;
+
+  do {
+    rmer = (rmer >> BITS) | ((rmer & Mask<BITS>::base) << off);
+    ++o;
+  } while(rmer ^ mer);
+  return o;
+}
 
 // Seed a random generator
 template <typename EngineT, std::size_t StateSize = EngineT::state_size>

@@ -28,27 +28,7 @@ std::string read_fasta(const char* path) {
   return res;
 }
 
-const char* conv = "ACGT";
-std::string mer_to_string(uint64_t x, size_t k) {
-
-  std::string res;
-  for(int i = k - 1; i >= 0; i--)
-    res += conv[(x >> (2 * i)) & 0x3];
-  return res;
-}
-
-uint64_t string_to_mer(const std::string& line, size_t k) {
-  uint64_t m = 0;
-  for(size_t i = 0; i < k; ++i) {
-    int code = base_to_code(line[i]);
-    if(code < 0) {
-      std::cerr << "Invalid characters in mer " << line << '\n';
-      exit(1);
-    }
-    m = (m << 2) | code;
-  }
-  return m;
-}
+const char* conv = "012345678";
 
 const char* bconv = "01";
 std::string bmer_to_string(uint64_t x, size_t k) {
@@ -76,44 +56,4 @@ uint64_t string_to_bmer(const std::string& line, size_t k) {
     m = (m << 1) | code;
   }
   return m;
-}
-
-std::unordered_set<uint64_t> read_mers(const char* path, const size_t k) {
-  std::unordered_set<uint64_t> res;
-  std::string                  line;
-  std::ifstream                is(path);
-  size_t                       nb_mers = 0;
-
-  while(std::getline(is, line)) {
-    if(line.size() != k) {
-      std::cerr << "All mers must have length " << k << ", got '" << line << "'\n";
-      exit(1);
-    }
-    uint64_t m = string_to_mer(line, k);
-    auto tmp = res.insert(m);
-    if(!tmp.second) {
-      std::cerr << "Duplicated mer in set " << mer_to_string(m, k) << ':' << line << '\n';
-      exit(1);
-    }
-    ++nb_mers;
-  }
-
-  if(nb_mers != res.size()) {
-    std::cerr << "Error, size of set != nb mers inserted\n";
-    exit(1);
-  }
-
-  return res;
-}
-
-int compute_order(uint64_t mer, size_t k) {
-  const int off  = 2 * (k - 1);
-  uint64_t  rmer = mer;
-  int       o    = 0;
-
-  do {
-    rmer = (rmer >> 2) | ((rmer & 0x3) << off);
-    ++o;
-  } while(rmer ^ mer);
-  return o;
 }
