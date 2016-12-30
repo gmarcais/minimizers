@@ -4,8 +4,8 @@ option("a", "alphabet") {
   description "Alphabet"
   c_string; default "acgt" }
 option("s", "size") {
-  description "Alphabet [1, s-1]"
-  int; conflict "alphabet" }
+  description "Alphabet [0, S-1]"
+  int; typestr "S"; conflict "alphabet" }
 
 arg("k") {
   description "Length of k-mers"

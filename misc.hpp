@@ -118,6 +118,14 @@ struct slide_mer {
     }
   }
 
+  void appende(const char c) {
+    int code = base_to_code(c);
+    if(c < 0)
+      throw std::runtime_error(std::string("Unexpected character '") + c + '\'');
+    mer = ((mer << BITS) | code) & mask;
+    len = std::min(len + 1, k);
+  }
+
   bool full() const { return len == k; }
 };
 
@@ -131,8 +139,11 @@ std::unordered_set<uint64_t> read_mers(const char* path, const size_t k) {
   std::unordered_set<uint64_t> res;
   std::string                  line;
   std::ifstream                is(path);
-  size_t                       nb_mers = 0;
 
+  if(!is.good())
+    throw std::runtime_error(std::string("Failed to open file '") + path + "\'");
+
+  size_t                       nb_mers = 0;
   while(std::getline(is, line)) {
     if(line.size() != k) {
       std::cerr << "All mers must have length " << k << ", got '" << line << "'\n";

@@ -9,6 +9,9 @@ std::vector<uint64_t> order;
 struct order_greater {
   bool operator()(uint64_t x, uint64_t y) const { return order[y] < order[x]; }
 };
+struct order_lesser {
+  bool operator()(uint64_t x, uint64_t y) const { return order[x] < order[y]; }
+};
 
 template<int BITS>
 int order_minimizer(const minimizers& args) {
@@ -89,24 +92,28 @@ int order_minimizer(const minimizers& args) {
       visit[m] = m;
     std::shuffle(visit.begin(), visit.end(), prg);
     for(uint64_t m : visit)
-      order[m] = ++counters[order[m]];
+      order[m] = counters[order[m]]++;
   } else {
     for(uint64_t m = 0; m < nb_mers; ++m)
-      order[m] = ++counters[order[m]];
+      order[m] = counters[order[m]]++;
   }
 
   if(args.debug_flag) {
-    std::cerr << "Order:\n";
+    std::cerr << "Order: " << (void*)&order << "\n";
     for(uint64_t m = 0; m < nb_mers; ++m)
       std::cerr << mer_to_string<BITS>(m, k) << ':' << order[m] << '\n';
   }
 
-  auto ms = compute_minimizers<order_greater, BITS>()(sequence, k, minimizers);
+  auto ms = compute_minimizers<order_lesser, BITS>()(sequence, k, minimizers);
 
   if(args.minimizers_given) {
     std::ofstream os(args.minimizers_arg);
-    for(const auto m : minimizers)
-      os << mer_to_string<BITS>(m, k) << '\n';
+    for(const auto m : minimizers) {
+      os << mer_to_string<BITS>(m, k);
+      if(args.debug_flag)
+        os << ' ' << order[m];
+      os << '\n';
+    }
   }
 
   double expected = ((double)(nb_mers - 1) / (double)(nb_mers + w)) * (2.0 / (w + 1));
