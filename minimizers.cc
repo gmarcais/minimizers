@@ -23,7 +23,9 @@ int order_minimizer(const minimizers& args) {
   const uint64_t  mask    = Mask<BITS>::bases(k);
   const uint64_t  nb_mers = mask + 1;
   std::mt19937_64 prg;
-  seed_prg(prg);
+  seed_prg(prg,
+           args.save_seed_given ? args.save_seed_arg : nullptr,
+           args.load_seed_given ? args.load_seed_arg : nullptr);
 
   std::unordered_set<uint64_t> minimizers;
 

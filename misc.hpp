@@ -188,7 +188,7 @@ int compute_order(uint64_t mer, size_t k) {
 // Seed a random generator
 template <typename EngineT, std::size_t StateSize = EngineT::state_size>
 void
-seed_prg(EngineT& engine)
+seed_prg(EngineT& engine, const char* save = nullptr, const char* load = nullptr)
 {
   using          engine_type    = typename EngineT::result_type;
   using          device_type    = std::random_device::result_type;
@@ -198,10 +198,28 @@ seed_prg(EngineT& engine)
     ? (bytes_needed / sizeof(device_type))
     : (bytes_needed / sizeof(seedseq_type));
   std::array<device_type, numbers_needed> numbers {};
-  std::random_device rnddev {};
-  std::generate(numbers.begin(), numbers.end(), std::ref(rnddev));
+
+  if(load) {
+    std::ifstream is(load);
+    size_t i = 0;
+    for( ; is && i < numbers_needed; ++i)
+      is >> numbers[i];
+    if(i != numbers_needed)
+      std::runtime_error(std::string("Failed loading seed from '") + load + "'");
+  } else {
+    std::random_device rnddev {};
+    std::generate(numbers.begin(), numbers.end(), std::ref(rnddev));
+  }
   std::seed_seq seedseq(numbers.cbegin(), numbers.cend());
   engine.seed(seedseq);
+
+  if(save) {
+    std::ofstream os(save);
+    for(size_t i = 0; i < numbers_needed; ++i)
+      os << numbers[i] << '\n';
+    if(!os.good())
+      throw std::runtime_error(std::string("Failed writing seed to '") + save + "'");
+  }
 }
 
 #endif /* __MISC_H__ */

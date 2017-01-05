@@ -21,6 +21,12 @@ option("s", "size") {
 option("d", "debug") {
   description "Display debugging info"
   off }
+option("save-seed") {
+  description "Save random seed to PATH"; typestr "PATH"
+  c_string }
+option("load-seed") {
+  description "Use random seed from PATH"; typestr "PATH"
+  c_string }
 
 arg("k") {
   description "Mer length"
