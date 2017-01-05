@@ -112,6 +112,8 @@ struct slide_mer {
     , k(k_)
   { }
 
+  void truncate() { len = 0; }
+
   void append(const char c) {
     int code = base_to_code(c);
     if(code >= 0) {

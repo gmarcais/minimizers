@@ -3,12 +3,15 @@ purpose "Generate a binary de Bruijn sequence"
 option("w", "wrap") {
   description "Wrap around to get a linear debruijn sequence"
   off }
+option("W", "wrapbases") {
+  description "Wrap around by W bases"; typestr "W"
+  int64; conflict "wrap" }
 option("i", "infinity") {
   description "Generate infinite repetitive sequence"
-  off; conflict "wrap" }
+  off; conflict "wrap", "wrapbases" }
 option("l", "length") {
   description "Generate L characters"; typestr "L"
-  int64; conflict "wrap", "infinity" }
+  int64; conflict "wrap", "wrapbases", "infinity" }
 option("f", "fasta") {
   description "Output as a fasta format"
   off; conflict "infinity" }

@@ -1,0 +1,9 @@
+purpose "Binary mer distribution"
+
+arg("k") {
+  description "Mer length"
+  uint32 }
+arg("fasta") {
+  description "Input sequence"
+  c_string; typestr "PATH" }
+  

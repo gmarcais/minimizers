@@ -4,10 +4,10 @@ CXXFLAGS = -Wall -Werror -std=c++1y
 
 CMDS  = minimizers.yaggo generate_sequence.yaggo cycle_induced_universal_set.yaggo
 CMDS += longest_path.yaggo minimizers_large.yaggo
-CMDS += w_sparse.yaggo dbg_seq.yaggo dbg_gen.yaggo dbgs_to_uhset.yaggo
+CMDS += w_sparse.yaggo dbg_seq.yaggo dbg_gen.yaggo dbgs_to_uhset.yaggo mer_hist.yaggo
 
 SRCS  = minimizers.cc compute_minimizers.cc generate_sequence.cc misc.cc
-SRCS += w_sparse.cc longest_path.cc dbg_seq.cc dbgs_to_uhset.cc
+SRCS += w_sparse.cc longest_path.cc dbg_seq.cc dbgs_to_uhset.cc mer_hist.cc
 #SRCS += cycle_induced_universal_set.cc dna_longest_path.cc binary_longest_path.cc
 # SRCS += minimizers_large.cc marsaglia_binary_matrices.cc w_sparse.cc dbg_seq.cc
 # SRCS += dbg_gen.cc
@@ -23,6 +23,7 @@ SRCS += w_sparse.cc longest_path.cc dbg_seq.cc dbgs_to_uhset.cc
 : misc.o w_sparse.o                                |> !lxxd |> w_sparse
 : dbg_seq.o                                        |> !lxxd |> dbg_seq
 : misc.o dbgs_to_uhset.o                           |> !lxxd |> dbgs_to_uhset
+: misc.o mer_hist.o                                |> !lxxd |> mer_hist
 #: dbg_gen.o                                        |> !lxxd |> dbg_gen
 
 #: foreach mers_in_set.cc uhmers.cc compute_minimizers.cc | {cmdlines} |> !cxx |>

@@ -150,6 +150,8 @@ int main(int argc, char *argv[]) {
   ssize_t length = (ssize_t)1 << args.order_arg;
   if(args.wrap_flag)
     length += args.order_arg - 1;
+  else if(args.wrapbases_given)
+    length += args.wrapbases_arg;
   else if(args.infinity_flag)
     length = -1;
   else if(args.length_given)
