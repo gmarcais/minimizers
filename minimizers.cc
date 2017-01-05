@@ -43,6 +43,8 @@ int order_minimizer(const minimizers& args) {
     counters[nonu_counter] = nb_mers;
 
     std::ifstream is(args.universal_arg);
+    if(!is.good())
+      minimizers::error() << "Failed to open universal k-mer set file '" << args.universal_arg << '\'';
     std::string line;
     while(std::getline(is, line)) {
       uint64_t m = string_to_mer<BITS>(line, k);
@@ -50,6 +52,8 @@ int order_minimizer(const minimizers& args) {
       ++counters[0];
       --counters[nonu_counter];
     }
+    if(!is.eof())
+      minimizers::error() << "Error while reading universal k-mer set file '" << args.universal_arg << '\'';
   }
 
   // Create conjugacy classes for elements that are not yet classified
@@ -116,12 +120,14 @@ int order_minimizer(const minimizers& args) {
     }
   }
 
-  double expected = ((double)(nb_mers - 1) / (double)(nb_mers + w)) * (2.0 / (w + 1));
-  double actual = (double)ms.nb() / (double)(sequence.size() - k + 1);
+  //  const double expected = ((double)(nb_mers - 1) / (double)(nb_mers + w)) * (2.0 / (w + 1));
+  const double expected = 2.0 / (w + 1);
+  const double actual = (double)ms.nb() / (double)(sequence.size() - k + 1);
   std::cout << "minimizers: " << minimizers.size() << '\n'
-            << "mean: " << ms.mean() << '\n'
+            << "mean: " << ms.mean() << ' ' << ms.sum() << '/' << ms.nb() << '\n'
             << "stddev: " << ms.stddev() << '\n'
-            << "density: " << actual << (actual < expected ? " < " : " > ")  << expected << '\n';
+            << "density: " << actual << (actual < expected ? " < " : " > ")  << expected << '\n'
+            << '\t' << ms.nb() << '/' << (sequence.size() - k + 1) << ' ' << ms.total() << '\n';
 
   return 0;
 }

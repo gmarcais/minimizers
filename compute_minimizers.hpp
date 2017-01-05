@@ -76,8 +76,10 @@ struct compute_minimizers {
 
     size_t min_pos = min_pos_i;
     act(mer_pos(mers[min_pos_i]));
+    ms.count();
 
     for(pos_i = 0; first != last; ++first, ++pos, pos_i = (pos_i + 1) % mer_pos::window) {
+      ms.count();
       mer.appende(*first);
       mer_pos mp(mer.mer, pos - k + 1);
       if(comp(mp, mers[min_pos_i])) { // a new minimimum arrived

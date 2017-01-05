@@ -10,7 +10,7 @@ const int params[][2] = {
   {1, 3}, {1, 11}, {1, 0},  {2, 3}, {3, 0},
   {7, 0}, {1, 5},  {3, 0},  {2, 0}, {1, 0},
   {5, 0}, {1, 3},  {3, 0},  {1, 7}, {1, 7},
-  {3, 0}, {2, 0},  {3, 15}, {3, 0}, {1, 27},
+  {3, 0}, {2, 0},  {1, 15}, {3, 0}, {1, 27},
 };
 
 struct binary_out {
@@ -43,53 +43,15 @@ struct binary_out {
   }
 };
 
-struct dna_out {
-  static const char* bases;
-  int        m_wi;
-  const int  m_n;
-  const bool m_do_wrap;
-  int*       m_wrap;
-  int        m_buffer;
-  int        m_first;
-
-  dna_out(int n, bool do_wrap)
-    : m_wi(0), m_n(n), m_do_wrap(do_wrap)
-  {
-    m_wrap = new int[n - 1];
+void out(int x, ssize_t& length) {
+  if(length != 0) {
+    std::cout << x;
+    if(length > 0)
+      --length;
   }
+}
 
-  ~dna_out() {
-    const int v = (m_buffer << 1) | m_first;
-    std::cout << bases[v];
-
-    if(m_do_wrap) {
-      for(int i = 0; i < m_n - 1; ++i)
-        std::cout << bases[m_wrap[i]];
-    }
-    delete [] m_wrap;
-  }
-
-  void operator()(int b) {
-    std::cout << m_wi << ' ' << b << ' ' << m_buffer << ' ' << m_first << '\n';
-    if(m_wi > 0) {
-      const int v = (m_buffer << 1) | b;
-      std::cout << bases[v];
-    } else {
-     m_first  = b;
-    }
-    if(m_wi < m_n - 1) {
-      m_wrap[m_wi] = b;
-      ++m_wi;
-    }
-    m_buffer = b;
-  }
-};
-const char* dna_out::bases = "ACGT";
-
-template<typename Output>
-void seq_1(int n, int s, bool do_wrap) {
-  Output out(n, do_wrap);
-
+void seq_1(int n, int s, ssize_t length) {
   int x[n];
   int k = 0;
   int j = s;
@@ -99,14 +61,14 @@ void seq_1(int n, int s, bool do_wrap) {
   for(int i = 1; i < n; ++i)
     x[i] = 0;
 
-  while(true) {
-    out(x[k]);
+  while(length != 0) {
+    out(x[k], length);
     if(x[k])
       r = 0;
     else {
       ++r;
       if(r == n - 1) {
-        out(0);
+        out(0, length);
         break;
       }
     }
@@ -114,11 +76,12 @@ void seq_1(int n, int s, bool do_wrap) {
     j = ((j == 0) ? n : j) - 1;
     x[k] ^= x[j];
   }
+
+  if(length != 0)
+    seq_1(n, s, length);
 }
 
-template<typename Output>
-void seq_2(int n, int s, int t, bool do_wrap) {
-  Output out(n, do_wrap);
+void seq_2(int n, int s, int t, ssize_t length) {
 
   int x[n];
   int k = 0;
@@ -131,15 +94,15 @@ void seq_2(int n, int s, int t, bool do_wrap) {
   for(int l = 1; l < n; ++l)
     x[l] = 0;
 
-  while(true) {
-    out(x[k]);
+  while(length != 0) {
+    out(x[k], length);
 
     if(x[k])
       r = 0;
     else {
       ++r;
       if(r == n - 1) {
-        std::cout << "0";
+        out(0, length);
         break;
       }
     }
@@ -151,22 +114,28 @@ void seq_2(int n, int s, int t, bool do_wrap) {
 
     x[k] ^= x[j] ^ x[i] ^ x[h];
   }
+
+  if(length != 0) // wrap around
+    seq_2(n, s, t, length);
 }
 
-template<typename Output>
-void seq(int n, bool do_wrap) {
+void seq(int n, ssize_t length) {
   if(n == 0) {
     // NOOP
   } else if(n == 1) {
-    Output out(1, do_wrap);
-    out(0), out(1);
+    while(length != 0) {
+      out(0, length);
+      out(1, length);
+    }
   } else if(n == 2) {
-    Output out(2, do_wrap);
-    out(0), out(0), out(1), out(1);
+    while(length != 0) {
+      out(0, length), out(0, length);
+      out(1, length), out(1, length);
+    }
   } else if(params[n][1] == 0) {
-    seq_1<Output>(n, params[n][0], do_wrap);
+    seq_1(n, params[n][0], length);
   } else {
-    seq_2<Output>(n, params[n][0], params[n][1], do_wrap);
+    seq_2(n, params[n][0], params[n][1], length);
   }
 }
 
@@ -178,9 +147,18 @@ int main(int argc, char *argv[]) {
     dbg_seq::error() << "order must be in [0, " << (sizeof(params) / sizeof(int[2])) << "]";
   }
 
-  seq<binary_out>(args.order_arg, args.wrap_flag);
+  ssize_t length = (ssize_t)1 << args.order_arg;
+  if(args.wrap_flag)
+    length += args.order_arg - 1;
+  else if(args.infinity_flag)
+    length = -1;
+  else if(args.length_given)
+    length = args.length_arg;
 
-  if(isatty(1))
+  if(args.fasta_flag)
+    std::cout << ">dbg_binary order:" << args.order_arg << " length:" << length << '\n';
+  seq(args.order_arg, length);
+  if(isatty(1) || args.fasta_flag)
     std::cout << '\n';
 
   return 0;

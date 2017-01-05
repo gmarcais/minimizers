@@ -1,8 +1,17 @@
 purpose "Generate a binary de Bruijn sequence"
 
 option("w", "wrap") {
-  description "Wrap around to get full sequence"
+  description "Wrap around to get a linear debruijn sequence"
   off }
+option("i", "infinity") {
+  description "Generate infinite repetitive sequence"
+  off; conflict "wrap" }
+option("l", "length") {
+  description "Generate L characters"; typestr "L"
+  int64; conflict "wrap", "infinity" }
+option("f", "fasta") {
+  description "Output as a fasta format"
+  off; conflict "infinity" }
 arg("order") {
   description "Order of sequence to generate"
   int }
