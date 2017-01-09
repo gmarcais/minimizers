@@ -3,6 +3,9 @@ description "Count / output minimizers in a sequence"
 option("minimizers") {
   description "Write the minimizers to PATH"
   c_string; typestr "PATH" }
+option("distance-histo") {
+  description "Write histo of distance between fingerprints to PATH"
+  c_string; typestr "PATH" }
 option("c", "conjugacy") {
   description "Sort by conjugacy class size"
   off }

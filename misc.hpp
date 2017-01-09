@@ -10,40 +10,6 @@
 #include <fstream>
 #include <iostream>
 
-class mean_stdev {
-  double        A = 0, Q = 0, S = 0;
-  unsigned long n = 0, c = 0;
-public:
-
-  void sample(const double v) {
-    const double y = v - A;
-    S += v;
-    ++n;
-    A += y / n;
-    Q += y * (v - A);
-  }
-  void count() { ++c; }
-
-  unsigned long nb() const { return n; }
-  unsigned long total() const { return c; }
-  double mean() const {
-    if(n == 0)
-      throw std::domain_error("No samples");
-    return A;
-  }
-  double variance() const {
-    if(n < 2)
-      throw std::domain_error("Not enough samples");
-    return Q / (n - 1);
-  }
-  double sum() const { return S; }
-  double stddev() const { return std::sqrt(variance()); }
-};
-inline mean_stdev& operator<<(mean_stdev& ms, const double v) {
-  ms.sample(v);
-  return ms;
-}
-
 // Mask
 template<int BITS>
 struct Mask {

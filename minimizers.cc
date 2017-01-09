@@ -1,6 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <unordered_map>
 
 #include "minimizers.hpp"
 #include "misc.hpp"
@@ -13,6 +12,13 @@ struct order_greater {
 struct order_lesser {
   bool operator()(uint64_t x, uint64_t y) const { return order[x] < order[y]; }
 };
+
+void write_histo(std::ostream& os, const std::vector<size_t>& h) {
+  for(size_t i = 0; i < h.size(); ++i) {
+    if(h[i] > 0)
+      os << i << ' ' << h[i] << '\n';
+  }
+}
 
 template<int BITS>
 int order_minimizer(const minimizers& args) {
@@ -28,8 +34,7 @@ int order_minimizer(const minimizers& args) {
            args.save_seed_given ? args.save_seed_arg : nullptr,
            args.load_seed_given ? args.load_seed_arg : nullptr);
 
-  //  std::unordered_set<uint64_t> minimizers;
-  std::unordered_map<uint64_t, std::vector<mer_pos>> minimizers;
+  std::unordered_set<uint64_t> minimizers;
 
   order.resize(nb_mers, (uint64_t)0);
 
@@ -112,28 +117,25 @@ int order_minimizer(const minimizers& args) {
       std::cerr << mer_to_string<BITS>(m, k) << ':' << order[m] << '\n';
   }
 
-  //  auto ms = compute_minimizers<order_lesser, BITS>()(sequence, k, minimizers);
-  auto act = [&minimizers](const mer_pos& mp) -> void {
-    auto it = minimizers.find(mp.mer);
-    if(it == minimizers.end())
-      minimizers.insert(std::make_pair(mp.mer, std::vector<mer_pos>{mp}));
-    else
-      it->second.push_back(mp);
-  };
-  auto ms = args.shift_flag
-    ? compute_minimizers<order_lesser, BITS>().calc2(sequence.cbegin(), sequence.cend(), k, act, args.first_flag)
-    : compute_minimizers<order_lesser, BITS>()(sequence.cbegin(), sequence.cend(), k, act);
+  auto ms = compute_minimizers<order_lesser, BITS>()(sequence, k, minimizers);
 
   if(args.minimizers_given) {
     std::ofstream os(args.minimizers_arg);
-    for(const auto& m : minimizers) {
-      os << mer_to_string<BITS>(m.first, k);
-      for(const auto c : m.second)
-        os << ' ' << c.pos << ':' << c.win_pos;
-      // if(args.debug_flag)
-      //   os << ' ' << order[m];
+    for(const auto m : minimizers) {
+      os << mer_to_string<BITS>(m, k);
+      if(args.debug_flag)
+        os << ' ' << order[m];
       os << '\n';
     }
+    if(!os.good())
+      minimizers::error() << "Error writing minimizers to file '" << args.minimizers_arg << '\'';
+  }
+
+  if(args.distance_histo_given) {
+    std::ofstream os(args.distance_histo_arg);
+    write_histo(os, ms.histo());
+    if(!os.good())
+      minimizers::error() << "Error writing distance histo to file '" << args.distance_histo_arg << '\'';
   }
 
   //  const double expected = ((double)(nb_mers - 1) / (double)(nb_mers + w)) * (2.0 / (w + 1));

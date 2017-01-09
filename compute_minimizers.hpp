@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <unordered_set>
+#include "mean_stdev.hpp"
 #include "misc.hpp"
 
 extern std::vector<uint64_t> order;
