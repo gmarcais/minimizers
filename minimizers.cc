@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
 
 #include "minimizers.hpp"
 #include "misc.hpp"
@@ -27,7 +28,8 @@ int order_minimizer(const minimizers& args) {
            args.save_seed_given ? args.save_seed_arg : nullptr,
            args.load_seed_given ? args.load_seed_arg : nullptr);
 
-  std::unordered_set<uint64_t> minimizers;
+  //  std::unordered_set<uint64_t> minimizers;
+  std::unordered_map<uint64_t, std::vector<mer_pos>> minimizers;
 
   order.resize(nb_mers, (uint64_t)0);
 
@@ -110,14 +112,26 @@ int order_minimizer(const minimizers& args) {
       std::cerr << mer_to_string<BITS>(m, k) << ':' << order[m] << '\n';
   }
 
-  auto ms = compute_minimizers<order_lesser, BITS>()(sequence, k, minimizers);
+  //  auto ms = compute_minimizers<order_lesser, BITS>()(sequence, k, minimizers);
+  auto act = [&minimizers](const mer_pos& mp) -> void {
+    auto it = minimizers.find(mp.mer);
+    if(it == minimizers.end())
+      minimizers.insert(std::make_pair(mp.mer, std::vector<mer_pos>{mp}));
+    else
+      it->second.push_back(mp);
+  };
+  auto ms = args.shift_flag
+    ? compute_minimizers<order_lesser, BITS>().calc2(sequence.cbegin(), sequence.cend(), k, act, args.first_flag)
+    : compute_minimizers<order_lesser, BITS>()(sequence.cbegin(), sequence.cend(), k, act);
 
   if(args.minimizers_given) {
     std::ofstream os(args.minimizers_arg);
-    for(const auto m : minimizers) {
-      os << mer_to_string<BITS>(m, k);
-      if(args.debug_flag)
-        os << ' ' << order[m];
+    for(const auto& m : minimizers) {
+      os << mer_to_string<BITS>(m.first, k);
+      for(const auto c : m.second)
+        os << ' ' << c.pos << ':' << c.win_pos;
+      // if(args.debug_flag)
+      //   os << ' ' << order[m];
       os << '\n';
     }
   }

@@ -21,6 +21,12 @@ option("s", "size") {
 option("d", "debug") {
   description "Display debugging info"
   off }
+option("S", "shift") {
+  description "Shift algorithm"
+  off }
+option("f", "first") {
+  description "Handle first window differently"
+  off }
 option("save-seed") {
   description "Save random seed to PATH"; typestr "PATH"
   c_string }
