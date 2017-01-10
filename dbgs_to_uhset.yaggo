@@ -1,0 +1,11 @@
+purpose "Generate a uhset for binary alphabet from de Bruijn sequence"
+
+arg("k") {
+  description "Mer length"
+  uint32 }
+arg("w") {
+  description "Length of window"
+  uint32 }
+arg("seq") {
+  description "De Bruijn sequence"
+  c_string; typestr "PATH" }

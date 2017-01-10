@@ -1,0 +1,27 @@
+purpose "Generate general debruijn sequence"
+
+option("a", "alphabet") {
+  description "String with every character in the alphabet"
+  c_string; default "ACGT" }
+option("s", "size") {
+  description "Alphabet [0,s)"
+  int; conflict "alphabet" }
+option("w", "wrap") {
+  description "Wrap around sequence"
+  off }
+option("W", "wrapbases") {
+  description "Wrap around by W bases"; typestr "W"
+  int64; conflict "wrap" }
+option("i", "infinity") {
+  description "Infinite sequence"
+  conflict "wrap"
+  off }
+option("l", "length") {
+  description "Generate L characters"; typestr "L"
+  int64; conflict "wrap", "wrapbases", "infinity" }
+option("f", "fasta") {
+  description "Output as a fasta format"
+  off; conflict "infinity" }
+arg("order") {
+  description "Order of sequence to generate"
+  int }

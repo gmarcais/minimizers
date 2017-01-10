@@ -30,10 +30,12 @@ std::string read_fasta(const char* path) {
   return res;
 }
 
-const char* conv = "012345678";
+const char* conv; // = "012345678";
+std::string str_conv;
 
 int ascii_to_code[256];
 int initialize_codes(const char* s) {
+  conv = s;
   std::fill(ascii_to_code, ascii_to_code + 256, -1);
   int i = 0;
   for( ; *s; ++i, ++s) {
@@ -49,7 +51,8 @@ int initialize_codes(int s) {
   std::ostringstream os;
   for(int i = 0; i < s; ++i)
     os << i;
-  return initialize_codes(os.str().c_str());
+  str_conv = os.str();
+  return initialize_codes(str_conv.c_str());
 }
 
 const char* bconv = "01";
