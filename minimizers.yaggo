@@ -6,6 +6,12 @@ option("minimizers") {
 option("distance-histo") {
   description "Write histo of distance between fingerprints to PATH"
   c_string; typestr "PATH" }
+option("count-histo") {
+  description "Write histo of minimizers count to PATH"
+  c_string; typestr "PATH" }
+option("data-histo") {
+  description "Write histo of minimizers sequence to PATH"
+  c_string; typestr "PATH" }
 option("c", "conjugacy") {
   description "Sort by conjugacy class size"
   off }

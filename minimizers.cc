@@ -4,6 +4,7 @@
 #include "minimizers.hpp"
 #include "misc.hpp"
 #include "compute_minimizers.hpp"
+#include "mean_stdev.hpp"
 
 std::vector<uint64_t> order;
 struct order_greater {
@@ -13,10 +14,17 @@ struct order_lesser {
   bool operator()(uint64_t x, uint64_t y) const { return order[x] < order[y]; }
 };
 
-void write_histo(std::ostream& os, const std::vector<size_t>& h) {
+template<typename T>
+void write_histo(std::ostream& os, const std::vector<T>& h, bool normalize = false) {
+  double sum = 1.0;
+  if(normalize) {
+    for(const auto& x : h)
+      sum += x;
+  }
+
   for(size_t i = 0; i < h.size(); ++i) {
     if(h[i] > 0)
-      os << i << ' ' << h[i] << '\n';
+      os << i << ' ' << (h[i] / sum) << '\n';
   }
 }
 
@@ -34,7 +42,22 @@ int order_minimizer(const minimizers& args) {
            args.save_seed_given ? args.save_seed_arg : nullptr,
            args.load_seed_given ? args.load_seed_arg : nullptr);
 
+  mean_stdev distances;
   std::unordered_set<uint64_t> minimizers;
+  std::vector<std::pair<size_t, size_t>> minimizers_counts(nb_mers, std::make_pair(0, 0));
+
+  size_t min_pos    = std::numeric_limits<size_t>::max();
+  size_t prev_start = 0;
+  auto act = [&](const mer_pos& mp) -> void {
+    if(min_pos != std::numeric_limits<size_t>::max()) {
+      distances.sample(mp.pos - min_pos);
+      minimizers.insert(mp.mer);
+      ++(minimizers_counts[mp.mer].first);
+      minimizers_counts[mp.mer].second += mp.win_start - prev_start;
+    }
+    min_pos    = mp.pos;
+    prev_start = mp.win_start;
+  };
 
   order.resize(nb_mers, (uint64_t)0);
 
@@ -117,7 +140,7 @@ int order_minimizer(const minimizers& args) {
       std::cerr << mer_to_string<BITS>(m, k) << ':' << order[m] << '\n';
   }
 
-  auto ms = compute_minimizers<order_lesser, BITS>()(sequence, k, minimizers);
+  compute_minimizers<order_lesser, BITS>()(sequence.cbegin(), sequence.cend(), k, act);
 
   if(args.minimizers_given) {
     std::ofstream os(args.minimizers_arg);
@@ -133,19 +156,56 @@ int order_minimizer(const minimizers& args) {
 
   if(args.distance_histo_given) {
     std::ofstream os(args.distance_histo_arg);
-    write_histo(os, ms.histo());
+    write_histo(os, distances.histo(), true);
     if(!os.good())
       minimizers::error() << "Error writing distance histo to file '" << args.distance_histo_arg << '\'';
   }
 
+  if(args.count_histo_given || args.data_histo_given) {
+    std::vector<double> count_histo;
+    std::vector<double> data_histo;
+    size_t total = 0;
+    for(size_t i = 0; i < minimizers_counts.size(); ++i) {
+      if(minimizers_counts[i].first > 0) {
+        const auto x = (minimizers_counts[i].first - 1) / 50;
+        if(x >= count_histo.size())
+          count_histo.resize(x + 1, 0);
+        ++count_histo[x];
+        ++total;
+        const auto y = (minimizers_counts[i].second - 1) / 100;
+        if(y >= data_histo.size())
+          data_histo.resize(y + 1, 0);
+        ++data_histo[y];
+      }
+    }
+    for(auto& x : count_histo)
+      x /= total;
+    for(auto& y : data_histo)
+      y /= total;
+
+    if(args.count_histo_given) {
+      std::ofstream os(args.count_histo_arg);
+      write_histo(os, count_histo);
+      if(!os.good())
+        minimizers::error() << "Error writing count histo to file '" << args.count_histo_arg << '\'';
+    }
+
+    if(args.data_histo_given) {
+      std::ofstream os(args.data_histo_arg);
+      write_histo(os, data_histo);
+      if(!os.good())
+        minimizers::error() << "Error writing data histo to file '" << args.data_histo_arg << '\'';
+    }
+  }
+
   //  const double expected = ((double)(nb_mers - 1) / (double)(nb_mers + w)) * (2.0 / (w + 1));
   const double expected = 2.0 / (w + 1);
-  const double actual = (double)ms.nb() / (double)(sequence.size() - k + 1);
+  const double actual = (double)distances.nb() / (double)(sequence.size() - k + 1);
   std::cout << "minimizers: " << minimizers.size() << '\n'
-            << "mean: " << ms.mean() << ' ' << ms.sum() << '/' << ms.nb() << '\n'
-            << "stddev: " << ms.stddev() << '\n'
+            << "mean: " << distances.mean() << ' ' << distances.sum() << '/' << distances.nb() << '\n'
+            << "stddev: " << distances.stddev() << '\n'
             << "density: " << actual << (actual < expected ? " < " : " > ")  << expected << '\n'
-            << '\t' << ms.nb() << '/' << (sequence.size() - k + 1) << ' ' << ms.total() << '\n';
+            << '\t' << distances.nb() << '/' << (sequence.size() - k + 1) << ' ' << (sequence.size() - (w + k) + 2) << '\n';
 
   return 0;
 }
