@@ -13,7 +13,7 @@ std::string read_fasta(const char* path) {
 
   int c = is.peek();
   if(c != '>') {
-    std::cerr << "Invalid fasta file" << std::endl;
+    std::cerr << "Invalid fasta file '" << path << "'\n";
     exit(1);
   }
 
@@ -32,6 +32,7 @@ std::string read_fasta(const char* path) {
 
 const char* conv; // = "012345678";
 std::string str_conv;
+size_t mer_len;
 
 int ascii_to_code[256];
 int initialize_codes(const char* s) {

@@ -1,5 +1,5 @@
 purpose "Output the Roberts ordering of k-mers"
 
-option("k") {
+arg("k") {
   description "K-mer length"
   int }

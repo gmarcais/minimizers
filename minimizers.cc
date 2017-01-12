@@ -14,6 +14,13 @@ struct order_lesser {
   bool operator()(uint64_t x, uint64_t y) const { return order[x] < order[y]; }
 };
 
+template<int BITS>
+struct order_canonical_lesser {
+  bool operator()(uint64_t x, uint64_t y) const {
+    return order[canonical<BITS>(x)] < order[canonical<BITS>(y)];
+  }
+};
+
 template<typename T>
 void write_histo(std::ostream& os, const std::vector<T>& h, bool normalize = false) {
   double sum = 1.0;
@@ -30,8 +37,9 @@ void write_histo(std::ostream& os, const std::vector<T>& h, bool normalize = fal
 
 template<int BITS>
 int order_minimizer(const minimizers& args) {
-  const std::string sequence = read_fasta(args.fasta_arg);
+  //  const std::string sequence = read_fasta(args.fasta_arg);
   const size_t      k        = args.k_arg;
+  mer_len                    = k;
   mer_pos::window            = args.w_arg;
   const size_t      w        = mer_pos::window;
 
@@ -51,9 +59,10 @@ int order_minimizer(const minimizers& args) {
   auto act = [&](const mer_pos& mp) -> void {
     if(min_pos != std::numeric_limits<size_t>::max()) {
       distances.sample(mp.pos - min_pos);
-      minimizers.insert(mp.mer);
-      ++(minimizers_counts[mp.mer].first);
-      minimizers_counts[mp.mer].second += mp.win_start - prev_start;
+      uint64_t m = args.canonical_flag ? canonical<BITS>(mp.mer) : mp.mer;
+      minimizers.insert(m);
+      ++(minimizers_counts[m].first);
+      minimizers_counts[m].second += mp.win_start - prev_start;
     }
     min_pos    = mp.pos;
     prev_start = mp.win_start;
@@ -140,7 +149,10 @@ int order_minimizer(const minimizers& args) {
       std::cerr << mer_to_string<BITS>(m, k) << ':' << order[m] << '\n';
   }
 
-  compute_minimizers<order_lesser, BITS>()(sequence.cbegin(), sequence.cend(), k, act);
+  fasta_iterator it(args.fasta_arg);
+  size_t seen_mers = args.canonical_flag
+    ? compute_minimizers<order_canonical_lesser<BITS>, BITS>()(begin(it), end(it), k, act)
+    : compute_minimizers<order_lesser, BITS>()(begin(it), end(it), k, act);
 
   if(args.minimizers_given) {
     std::ofstream os(args.minimizers_arg);
@@ -172,6 +184,8 @@ int order_minimizer(const minimizers& args) {
           count_histo.resize(x + 1, 0);
         ++count_histo[x];
         ++total;
+      }
+      if(minimizers_counts[i].second > 0) {
         const auto y = (minimizers_counts[i].second - 1) / 100;
         if(y >= data_histo.size())
           data_histo.resize(y + 1, 0);
@@ -200,12 +214,12 @@ int order_minimizer(const minimizers& args) {
 
   //  const double expected = ((double)(nb_mers - 1) / (double)(nb_mers + w)) * (2.0 / (w + 1));
   const double expected = 2.0 / (w + 1);
-  const double actual = (double)distances.nb() / (double)(sequence.size() - k + 1);
+  const double actual = (double)distances.nb() / (double)seen_mers;
   std::cout << "minimizers: " << minimizers.size() << '\n'
             << "mean: " << distances.mean() << ' ' << distances.sum() << '/' << distances.nb() << '\n'
             << "stddev: " << distances.stddev() << '\n'
             << "density: " << actual << (actual < expected ? " < " : " > ")  << expected << '\n'
-            << '\t' << distances.nb() << '/' << (sequence.size() - k + 1) << ' ' << (sequence.size() - (w + k) + 2) << '\n';
+            << '\t' << distances.nb() << '/' << seen_mers << ' ' << (seen_mers - w + 1) << '\n';
 
   return 0;
 }

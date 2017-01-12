@@ -9,6 +9,7 @@
 #include <functional>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 
 // Mask
 template<int BITS>
@@ -20,6 +21,35 @@ struct Mask {
 std::string read_fasta(const char* path);
 
 extern int ascii_to_code[256];
+extern size_t mer_len;
+
+// Only works if BITS is a power of 2
+template<int BITS>
+uint64_t reverse_bits(uint64_t x) {
+  switch(BITS) {
+  case  1: x = ((0x5555555555555555ULL & x) <<  1) | ((0xaaaaaaaaaaaaaaaaULL & x) >>  1);
+  case  2: x = ((0x3333333333333333ULL & x) <<  2) | ((0xccccccccccccccccULL & x) >>  2);
+  case  4: x = (( 0xf0f0f0f0f0f0f0fULL & x) <<  4) | ((0xf0f0f0f0f0f0f0f0ULL & x) >>  4);
+  case  8: x = ((  0xff00ff00ff00ffULL & x) <<  8) | ((0xff00ff00ff00ff00ULL & x) >>  8);
+  case 16: x = ((    0xffff0000ffffULL & x) << 16) | ((0xffff0000ffff0000ULL & x) >> 16);
+  case 32: x = ((                        x) << 32) | ((                        x) >> 32);
+  }
+  return x;
+}
+template<int BITS>
+inline uint64_t rev(uint64_t x) {
+  return reverse_bits<BITS>(x) >> (8 * sizeof(uint64_t) - BITS * mer_len);
+}
+template<int BITS>
+inline uint64_t rev_comp(uint64_t x) {
+  return rev<BITS>(~(uint64_t)0 - x);
+}
+template<int BITS>
+uint64_t canonical(uint64_t x) {
+  uint64_t rcx = rev_comp<BITS>(x);
+  return rcx < x ? rcx : x;
+}
+
 
 // Initialize ascii_to_code and return the size of the alphabet
 int initialize_codes(const char* s);
@@ -35,7 +65,7 @@ template<int BITS>
 struct mer_to_string {
   uint64_t x;
   uint64_t k;
-  mer_to_string(uint64_t x_, uint64_t k_) : x(x_), k(k_) { }
+  explicit mer_to_string(uint64_t x_, uint64_t k_ = mer_len) : x(x_), k(k_) { }
 
   operator std::string() const {
     std::string res;
@@ -92,7 +122,7 @@ struct slide_mer {
 
   void appende(const char c) {
     int code = base_to_code(c);
-    if(c < 0)
+    if(code < 0)
       throw std::runtime_error(std::string("Unexpected character '") + c + '\'');
     mer = ((mer << BITS) | code) & mask;
     len = std::min(len + 1, k);
@@ -187,5 +217,83 @@ seed_prg(EngineT& engine, const char* save = nullptr, const char* load = nullptr
       throw std::runtime_error(std::string("Failed writing seed to '") + save + "'");
   }
 }
+
+// Fasta sequence input iterator
+class fasta_iterator : public std::iterator<std::input_iterator_tag, char> {
+  std::filebuf* m_fb;
+  std::istream* m_is;
+  char          m_val;
+  char          m_separator;
+
+public:
+  fasta_iterator(char sep = 'N')
+    : m_fb(nullptr)
+    , m_is(nullptr)
+    , m_separator(sep)
+  { }
+  explicit fasta_iterator(std::istream& is, char sep = 'N')
+    : m_fb(nullptr)
+    , m_is(new std::istream(is.rdbuf()))
+    , m_separator(sep)
+  {
+    skip_headers();
+    ++*this;
+  }
+  explicit fasta_iterator(const char* path, char sep = 'N')
+    : m_fb(new std::filebuf)
+    , m_is(new std::istream(m_fb))
+    , m_separator(sep)
+  {
+    if(!m_fb->open(path, std::ios::in))
+      throw std::runtime_error(std::string("Failed to open fasta file '") + path + "'");
+    skip_headers();
+    ++*this;
+  }
+  explicit fasta_iterator(const std::string& path) : fasta_iterator(path.c_str()) { }
+  fasta_iterator(const fasta_iterator& rhs)
+    : m_fb(nullptr)
+    , m_is(rhs.m_is ? new std::istream(rhs.m_is->rdbuf()) : nullptr)
+    , m_val(rhs.m_val)
+    , m_separator(rhs.m_separator)
+  { }
+
+  ~fasta_iterator() {
+    delete m_is;
+    delete m_fb;
+  }
+
+  bool operator==(const fasta_iterator& rhs) const { return m_is == rhs.m_is; }
+  bool operator!=(const fasta_iterator& rhs) const { return m_is != rhs.m_is; }
+
+  fasta_iterator& operator++() {
+    bool m_nl = false;
+    for(m_val = m_is->get(); m_val == '\n'; m_val = m_is->get())
+      m_nl = true;
+    if(m_nl && m_val == '>') {
+      skip_headers();
+      m_val = m_separator;
+    }
+    if(m_is->eof()) {
+      delete m_is;
+      m_is = nullptr;
+    }
+    return *this;
+  }
+  fasta_iterator operator++(int) {
+    fasta_iterator res(*this);
+    ++*this;
+    return res;
+  }
+  char operator*() const { return m_val; }
+
+protected:
+  void skip_headers() {
+    while(m_is->peek() == '>')
+      m_is->ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+  }
+};
+
+inline fasta_iterator begin(fasta_iterator& it) { return it; }
+inline fasta_iterator end(fasta_iterator& it) { return fasta_iterator(); }
 
 #endif /* __MISC_H__ */

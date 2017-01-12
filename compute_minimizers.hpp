@@ -54,18 +54,19 @@ void shift(std::vector<T>& a) {
 template<typename MerComp, int BITS>
 struct compute_minimizers {
   template<typename String, typename Container>
-  inline void operator()(const String& seq, const size_t k,
+  inline size_t operator()(const String& seq, const size_t k,
                                Container& minimizers) {
     return this->operator()(seq.cbegin(), seq.cend(), k,
                             [&](const mer_pos& mp) { minimizers.insert(mp.mer); });
   }
 
   template<typename Iterator, typename Action>
-  void operator()(Iterator first, Iterator last, const size_t k,
+  size_t operator()(Iterator first, Iterator last, const size_t k,
                         Action act) {
     slide_mer<BITS>       mer(k);
-    size_t pos_i                    = 0; // Index in circular buffer;
-    size_t                pos       = 0;
+    size_t                seen_mers = 0;
+    size_t pos_i                  = 0; // Index in circular buffer;
+    size_t                pos     = 0;
     std::vector<mer_pos>  mers(mer_pos::window); // Circular buffer
     mer_pos_comp<MerComp> comp;
     auto                  left_comp = [&comp](const mer_pos& a, const mer_pos& b) -> bool {
@@ -81,6 +82,7 @@ struct compute_minimizers {
     size_t min_pos_i = 0;
     for(pos_i = 0; first != last && pos_i < mer_pos::window - 1; ++first, ++pos, ++pos_i) {
       mer.appende(*first);
+      ++seen_mers;
       mers[pos_i] = mer_pos(mer.mer, pos - k + 1, 0);
       if(comp(mers[pos_i], mers[min_pos_i]))
         min_pos_i = pos_i;
@@ -90,6 +92,7 @@ struct compute_minimizers {
 
     for( ; first != last; ++first, ++pos, pos_i = (pos_i + 1) % mer_pos::window) {
       mer.appende(*first);
+      ++seen_mers;
       mer_pos mp(mer.mer, pos - k + 1, pos + 2 - k - mer_pos::window);
       if(comp(mp, mers[min_pos_i])) { // a new minimimum arrived
         mp.reason = NewMin;
@@ -120,6 +123,7 @@ struct compute_minimizers {
       // }
       // std::cerr << '\n';
     }
+    return seen_mers;
   }
 
   template<typename Iterator, typename Action>

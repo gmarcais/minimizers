@@ -33,6 +33,9 @@ option("d", "debug") {
 option("S", "shift") {
   description "Shift algorithm"
   off }
+option("C", "canonical") {
+  description "Canonicalize k-mers"
+  off }
 option("f", "first") {
   description "Handle first window differently"
   off }
