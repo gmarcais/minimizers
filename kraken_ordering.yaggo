@@ -1,0 +1,5 @@
+purpose "Output the kraken ordering of k-mers"
+
+arg("k") {
+  description "K-mer length"
+  int }
