@@ -11,6 +11,9 @@ option("count-histo") {
   c_string; typestr "PATH" }
 option("data-histo") {
   description "Write histo of minimizers sequence to PATH"
+  string; typestr "PATH" }
+option("prefix") {
+  description "Write all info to this prefix"
   c_string; typestr "PATH" }
 option("c", "conjugacy") {
   description "Sort by conjugacy class size"
@@ -18,6 +21,9 @@ option("c", "conjugacy") {
 option("r", "randomize") {
   description "Randomize order within class"
   off }
+option("o", "order") {
+  description "Mapping from lexico. to new order"
+  c_string; typestr "PATH" }
 option("u", "universal") {
   description "Universal hitting set file"
   c_string; typestr "PATH" }

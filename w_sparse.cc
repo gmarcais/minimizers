@@ -26,23 +26,22 @@ int compute_sparsiness(const w_sparse& args) {
   const uint64_t  nb_mers = mask + 1;
 
   std::vector<bool> uhmers = read_uhmers<BITS>(args.universal_arg, k, nb_mers);
-  const std::string sequence = read_fasta(args.fasta_arg);
+  //  const std::string sequence = read_fasta(args.fasta_arg);
 
   std::vector<bool> window_p(w+1, false);
-  auto              it  = sequence.cbegin();
-  const auto        end = sequence.cend();
+  fasta_iterator fasta_it(args.fasta_arg);
+  auto           it   = begin(fasta_it);
+  const auto     last = end(fasta_it);
   slide_mer<BITS>   mer(k);
 
   // Prime k-1 bases of mer
-  for(size_t i = 0; i < k-1 && it != end; ++i, ++it)
-    mer.append(*it);
+  for(size_t i = 0; i < k-1 && it != last; ++i, ++it)
+    mer.appende(*it);
 
   // Prime w k-mers of window
   size_t uhmer_in_w = 0;
-  for(size_t i = 0; i < w && it != end; ++i, ++it) {
-    mer.append(*it);
-    if(!mer.full())
-      w_sparse::error() << "Priming: mer not full!";
+  for(size_t i = 0; i < w && it != last; ++i, ++it) {
+    mer.appende(*it);
     const bool is_uhmer = uhmers[mer.mer];
     window_p[i] = uhmers[mer.mer];
     uhmer_in_w += is_uhmer;
@@ -50,10 +49,9 @@ int compute_sparsiness(const w_sparse& args) {
 
   size_t sparse_window = 0; // Number of sparse windows
   size_t wi = w;
-  for( ; it != end; ++it) {
-    mer.append(*it);
-    if(!mer.full())
-      w_sparse::error() << "Counting: mer not full!";
+  size_t total = 0;
+  for( ; it != last; ++it, ++total) {
+    mer.appende(*it);
     const bool is_uhmer = uhmers[mer.mer];
     window_p[wi] = is_uhmer;
     uhmer_in_w += is_uhmer;
@@ -63,7 +61,7 @@ int compute_sparsiness(const w_sparse& args) {
   }
 
   std::cout << sparse_window << ' '
-            << ((double)sparse_window / (sequence.size() - (w + k)))
+            << ((double)sparse_window / total)
             << '\n';
 
   return 0;

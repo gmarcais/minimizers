@@ -50,6 +50,7 @@ int order_minimizer(const minimizers& args) {
            args.save_seed_given ? args.save_seed_arg : nullptr,
            args.load_seed_given ? args.load_seed_arg : nullptr);
 
+  // Data structure and action to take upon finding a minimizer
   mean_stdev distances;
   std::unordered_set<uint64_t> minimizers;
   std::vector<std::pair<size_t, size_t>> minimizers_counts(nb_mers, std::make_pair(0, 0));
@@ -138,6 +139,23 @@ int order_minimizer(const minimizers& args) {
     std::shuffle(visit.begin(), visit.end(), prg);
     for(uint64_t m : visit)
       order[m] = counters[order[m]]++;
+  } else if(args.order_given) {
+    // Read directly an order from the given file
+    std::ifstream is(args.order_arg);
+    if(!is.good())
+      minimizers::error() << "Failed to open order file '" << args.order_arg << '\'';
+    size_t i = 0;
+    std::vector<bool> used(nb_mers, false);
+    for( ; i < nb_mers && is.good(); ++i) {
+      is >> order[i];
+      if(order[i] >= nb_mers)
+        minimizers::error() << "Order " << order[i] << " is greater than the number of mers " << nb_mers;
+      if(used[order[i]])
+        minimizers::error() << "Order " << order[i] << " used twice";
+      used[order[i]] = true;
+    }
+    if(i < nb_mers)
+      minimizers::error() << "Too few elements in order file. Expected " << nb_mers << ", got " << i;
   } else {
     for(uint64_t m = 0; m < nb_mers; ++m)
       order[m] = counters[order[m]]++;
@@ -154,8 +172,9 @@ int order_minimizer(const minimizers& args) {
     ? compute_minimizers<order_canonical_lesser<BITS>, BITS>()(begin(it), end(it), k, act)
     : compute_minimizers<order_lesser, BITS>()(begin(it), end(it), k, act);
 
-  if(args.minimizers_given) {
-    std::ofstream os(args.minimizers_arg);
+  if(args.minimizers_given || args.prefix_given) {
+    const std::string path = args.minimizers_given ? std::string(args.minimizers_arg) : std::string(args.prefix_arg) + "_minimizers.txt";
+    std::ofstream os(path);
     for(const auto m : minimizers) {
       os << mer_to_string<BITS>(m, k);
       if(args.debug_flag)
@@ -163,17 +182,18 @@ int order_minimizer(const minimizers& args) {
       os << '\n';
     }
     if(!os.good())
-      minimizers::error() << "Error writing minimizers to file '" << args.minimizers_arg << '\'';
+      minimizers::error() << "Error writing minimizers to file '" << path << '\'';
   }
 
-  if(args.distance_histo_given) {
-    std::ofstream os(args.distance_histo_arg);
+  if(args.distance_histo_given || args.prefix_given) {
+    const std::string path = args.distance_histo_given ? std::string(args.distance_histo_arg) : std::string(args.prefix_arg) + "_distance.histo";
+    std::ofstream os(path);
     write_histo(os, distances.histo(), true);
     if(!os.good())
-      minimizers::error() << "Error writing distance histo to file '" << args.distance_histo_arg << '\'';
+      minimizers::error() << "Error writing distance histo to file '" << path << '\'';
   }
 
-  if(args.count_histo_given || args.data_histo_given) {
+  if(args.count_histo_given || args.data_histo_given || args.prefix_given) {
     std::vector<double> count_histo;
     std::vector<double> data_histo;
     size_t total = 0;
@@ -197,18 +217,20 @@ int order_minimizer(const minimizers& args) {
     for(auto& y : data_histo)
       y /= total;
 
-    if(args.count_histo_given) {
-      std::ofstream os(args.count_histo_arg);
+    if(args.count_histo_given || args.prefix_given) {
+      const std::string path = args.count_histo_given ? std::string(args.count_histo_arg) : std::string(args.prefix_arg) + "_count.histo";
+      std::ofstream os(path);
       write_histo(os, count_histo);
       if(!os.good())
-        minimizers::error() << "Error writing count histo to file '" << args.count_histo_arg << '\'';
+        minimizers::error() << "Error writing count histo to file '" << path << '\'';
     }
 
-    if(args.data_histo_given) {
-      std::ofstream os(args.data_histo_arg);
+    if(args.data_histo_given || args.prefix_given) {
+      const std::string path = args.data_histo_given ? std::string(args.data_histo_arg) : std::string(args.prefix_arg) + "_data.histo";
+      std::ofstream os(path);
       write_histo(os, data_histo);
       if(!os.good())
-        minimizers::error() << "Error writing data histo to file '" << args.data_histo_arg << '\'';
+        minimizers::error() << "Error writing data histo to file '" << path << '\'';
     }
   }
 
