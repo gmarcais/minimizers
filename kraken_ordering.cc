@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[]) {
   kraken_ordering args(argc, argv);
-  
+
   std::mt19937_64 rng;
   seed_prg(rng);
 

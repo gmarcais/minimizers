@@ -1,0 +1,21 @@
+purpose "Reshuffle minimizers to create a new ordering"
+
+option("a", "alphabet") {
+  description "Alphabet"
+  c_string; default "acgt" }
+option("s", "size") {
+  description "Alphabet [1, s-1]"
+  int; conflict "alphabet" }
+option("save-seed") {
+  description "Save random seed to PATH"; typestr "PATH"
+  c_string }
+option("load-seed") {
+  description "Use random seed from PATH"; typestr "PATH"
+  c_string }
+
+arg("k") {
+  description "Mer length"
+  uint32 }
+arg("minimizers") {
+  description "Minimizers file"
+  c_string; typestr "PATH" }

@@ -5,13 +5,13 @@ CXXFLAGS = -Wall -Werror -std=c++1y
 CMDS  = minimizers.yaggo generate_sequence.yaggo cycle_induced_universal_set.yaggo
 CMDS += longest_path.yaggo minimizers_large.yaggo
 CMDS += w_sparse.yaggo dbg_seq.yaggo dbg_gen.yaggo dbgs_to_uhset.yaggo mer_hist.yaggo
-CMDS += roberts_ordering.yaggo kraken_ordering.yaggo
+CMDS += roberts_ordering.yaggo kraken_ordering.yaggo minimap_ordering.yaggo reshuffle_ordering.yaggo
 
 SRCS  = minimizers.cc compute_minimizers.cc generate_sequence.cc misc.cc
 SRCS += w_sparse.cc longest_path.cc dbg_seq.cc dbgs_to_uhset.cc mer_hist.cc
 #SRCS += cycle_induced_universal_set.cc dna_longest_path.cc binary_longest_path.cc
 # SRCS += minimizers_large.cc marsaglia_binary_matrices.cc w_sparse.cc dbg_seq.cc
-SRCS += dbg_gen.cc roberts_ordering.cc kraken_ordering.cc
+SRCS += dbg_gen.cc roberts_ordering.cc kraken_ordering.cc minimap_ordering.cc reshuffle_ordering.cc
 
 : foreach $(CMDS)              |> !yaggo |> {cmdlines}
 : foreach $(SRCS) | {cmdlines} |> !cxx   |>
@@ -28,6 +28,8 @@ SRCS += dbg_gen.cc roberts_ordering.cc kraken_ordering.cc
 : misc.o dbg_gen.o                                 |> !lxxd |> dbg_gen
 : misc.o roberts_ordering.o                        |> !lxxd |> roberts_ordering
 : misc.o kraken_ordering.o                         |> !lxxd |> kraken_ordering
+: misc.o minimap_ordering.o                        |> !lxxd |> minimap_ordering
+: misc.o reshuffle_ordering.o                      |> !lxxd |> reshuffle_ordering
 
 #: foreach mers_in_set.cc uhmers.cc compute_minimizers.cc | {cmdlines} |> !cxx |>
 #: foreach conjugacy_minimizers.cc random_order.cc uhmers2.cc generate_sequence.cc | {cmdlines} |> !cxx |>
